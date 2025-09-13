@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简约天气查询</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e5799, #207cca);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .search-container {
+            display: flex;
+            margin-bottom: 30px;
+        }
+        
+        #city-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 50px 0 0 50px;
+            font-size: 1.1rem;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        #search-btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 0 50px 50px 0;
+            background: #ff6b6b;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #search-btn:hover {
+            background: #ff5252;
+        }
+        
+        .weather-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .location {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .location i {
+            margin-right: 10px;
+        }
+        
+        .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .temp {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .weather-icon {
+            font-size: 5rem;
+            margin: 20px 0;
+        }
+        
+        .weather-desc {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-transform: capitalize;
+        }
+        
+        .details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .detail-box i {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .loading i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .temp {
+                font-size: 3.5rem;
+            }
+            
+            .weather-icon {
+                font-size: 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>简约天气查询</h1>
+            <p class="subtitle">随时了解您所在城市的天气状况</p>
+        </header>
+        
+        <div class="search-container">
+            <input type="text" id="city-input" placeholder="输入城市名称...">
+            <button id="search-btn"><i class="fas fa-search"></i> 查询</button>
+        </div>
+        
+        <div class="loading">
+            <i class="fas fa-spinner"></i>
+            <p>正在获取天气数据...</p>
+        </div>
+        
+        <div class="error-message" id="error-msg">
+            无法找到该城市，请尝试其他名称
+        </div>
+        
+        <div class="weather-card" id="weather-card">
+            <div class="location">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="location">北京, CN</span>
+            </div>
+            
+            <div class="date" id="date">2023年10月15日 星期日</div>
+            
+            <div class="weather-icon">
+                <i class="fas fa-sun" id="weather-icon"></i>
+            </div>
+            
+            <div class="temp">
+                <span id="temperature">25</span>°C
+            </div>
+            
+            <div class="weather-desc" id="weather-desc">晴朗</div>
+            
+            <div class="details">
+                <div class="detail-box">
+                    <i class="fas fa-wind"></i>
+                    <p>风速</p>
+                    <p><span id="wind-speed">5.5</span> km/h</p>
+                </div>
+                
+                <div class="detail-box">
+                    <i class="fas fa-tint"></i>
+                    <p>湿度</p>
+                    <p><span id="humidity">65</span>%</p>
+                </div>
+                
+                <div class="detail-box">
+                    <i class="fas fa-temperature-high"></i>
+                    <p>体感温度</p>
+                    <p><span id="feels-like">26</span>°C</p>
+                </div>
+                
+                <div class="detail-box">
+                    <i class="fas fa-compress-alt"></i>
+                    <p>气压</p>
+                    <p><span id="pressure">1012</span> hPa</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>简约天气查询 &copy; 2023 | 数据来自 OpenWeatherMap</p>
+    </footer>
+
+    <script>
+        // 获取DOM元素
+        const cityInput = document.getElementById('city-input');
+        const searchBtn = document.getElementById('search-btn');
+        const weatherCard = document.getElementById('weather-card');
+        const errorMsg = document.getElementById('error-msg');
+        const loading = document.querySelector('.loading');
+        
+        // 天气数据元素
+        const locationEl = document.getElementById('location');
+        const dateEl = document.getElementById('date');
+        const weatherIcon = document.getElementById('weather-icon');
+        const temperatureEl = document.getElementById('temperature');
+        const weatherDesc = document.getElementById('weather-desc');
+        const windSpeedEl = document.getElementById('wind-speed');
+        const humidityEl = document.getElementById('humidity');
+        const feelsLikeEl = document.getElementById('feels-like');
+        const pressureEl = document.getElementById('pressure');
+        
+        // API密钥 - 实际应用中应使用后端代理保护密钥
+        const API_KEY = 'YOUR_API_KEY'; // 替换为你的OpenWeatherMap API密钥
+        const API_URL = `https://api.openweathermap.org/data/2.5/weather?appid=${API_KEY}&units=metric&lang=zh_cn`;
+        
+        // 设置默认城市
+        let currentCity = '北京';
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', () => {
+            // 设置当前日期
+            updateDate();
+            // 获取默认城市的天气
+            getWeatherData(currentCity);
+        });
+        
+        // 搜索按钮点击事件
+        searchBtn.addEventListener('click', () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                getWeatherData(city);
+            }
+        });
+        
+        // 按回车键搜索
+        cityInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const city = cityInput.value.trim();
+                if (city) {
+                    getWeatherData(city);
+                }
+            }
+        });
+        
+        // 获取天气数据
+        async function getWeatherData(city) {
+            // 显示加载动画
+            showLoading(true);
+            weatherCard.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            try {
+                // 使用模拟数据代替API调用（实际应用中应使用真实API）
+                // const response = await fetch(`${API_URL}&q=${city}`);
+                // const data = await response.json();
+                
+                // 模拟API响应
+                const data = {
+                    name: city,
+                    sys: { country: "CN" },
+                    dt: Math.floor(Date.now() / 1000),
+                    weather: [
+                        {
+                            id: getRandomWeatherId(),
+                            description: getRandomWeatherDesc(),
+                            icon: getWeatherIcon()
+                        }
+                    ],
+                    main: {
+                        temp: getRandomTemp(),
+                        feels_like: getRandomTemp(),
+                        humidity: Math.floor(Math.random() * 50) + 30,
+                        pressure: Math.floor(Math.random() * 30) + 990
+                    },
+                    wind: {
+                        speed: (Math.random() * 10 + 2).toFixed(1)
+                    }
+                };
+                
+                // 模拟延迟
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // 更新UI
+                updateWeatherUI(data);
+                currentCity = city;
+                cityInput.value = '';
+                showLoading(false);
+                weatherCard.style.display = 'block';
+            } catch (error) {
+                console.error('获取天气数据失败:', error);
+                showLoading(false);
+                errorMsg.style.display = 'block';
+            }
+        }
+        
+        // 更新天气UI
+        function updateWeatherUI(data) {
+            locationEl.textContent = `${data.name}, ${data.sys.country}`;
+            updateDate(data.dt);
+            
+            const weather = data.weather[0];
+            weatherIcon.className = `fas ${getWeatherIconClass(weather.id)}`;
+            temperatureEl.textContent = Math.round(data.main.temp);
+            weatherDesc.textContent = weather.description;
+            
+            windSpeedEl.textContent = data.wind.speed;
+            humidityEl.textContent = data.main.humidity;
+            feelsLikeEl.textContent = Math.round(data.main.feels_like);
+            pressureEl.textContent = data.main.pressure;
+        }
+        
+        // 更新日期显示
+        function updateDate(timestamp = Date.now() / 1000) {
+            const date = new Date(timestamp * 1000);
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            };
+            dateEl.textContent = date.toLocaleDateString('zh-CN', options);
+        }
+        
+        // 显示/隐藏加载动画
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+        
+        // 根据天气ID获取图标类
+        function getWeatherIconClass(weatherId) {
+            // 天气ID分组：https://openweathermap.org/weather-conditions
+            if (weatherId >= 200 && weatherId < 300) {
+                return 'fa-bolt'; // 雷暴
+            } else if (weatherId >= 300 && weatherId < 400) {
+                return 'fa-cloud-rain'; // 毛毛雨
+            } else if (weatherId >= 500 && weatherId < 600) {
+                return 'fa-cloud-showers-heavy'; // 雨
+            } else if (weatherId >= 600 && weatherId < 700) {
+                return 'fa-snowflake'; // 雪
+            } else if (weatherId >= 700 && weatherId < 800) {
+                return 'fa-smog'; // 大气
+            } else if (weatherId === 800) {
+                return 'fa-sun'; // 晴
+            } else if (weatherId > 800) {
+                return 'fa-cloud'; // 多云
+            }
+            return 'fa-cloud'; // 默认
+        }
+        
+        // 模拟数据生成函数
+        function getRandomWeatherId() {
+            const ids = [800, 801, 802, 803, 804, 300, 500, 501, 502, 600, 601, 701];
+            return ids[Math.floor(Math.random() * ids.length)];
+        }
+        
+        function getRandomWeatherDesc() {
+            const descs = ['晴朗', '少云', '多云', '阴天', '小雨', '中雨', '大雨', '雷阵雨', '小雪', '中雪', '大雪', '雾'];
+            return descs[Math.floor(Math.random() * descs.length)];
+        }
+        
+        function getRandomTemp() {
+            return Math.floor(Math.random() * 30) + 5; // 5-35°C
+        }
+        
+        function getWeatherIcon() {
+            const icons = ['01d', '02d', '03d', '04d', '09d', '10d', '11d', '13d', '50d'];
+            return icons[Math.floor(Math.random() * icons.length)];
+        }
+    </script>
+</body>
+</html>
