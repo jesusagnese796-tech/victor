@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级抽人系统 - Excel版</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2.5rem;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 550px;
+        }
+
+        #display-name {
+            font-size: 5.5rem;
+            font-weight: bold;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            color: #fff;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        button {
+            padding: 18px 60px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
+            transition: 0.3s;
+        }
+
+        button:hover { transform: translateY(-3px); background-color: #ff6b81; }
+
+        .upload-area {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="file"] { margin-top: 10px; font-size: 0.9rem; }
+
+        #status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #7bed9f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="margin: 0;">🎯 班级随机抽人</h2>
+    
+    <div id="display-name">等待名单...</div>
+    
+    <div class="controls">
+        <button id="btn" onclick="toggle()">开始</button>
+        
+        <div class="upload-area">
+            <div>第一步：上传 Excel 名字表</div>
+            <input type="file" id="excel-file" accept=".xlsx, .xls" />
+            <div id="status">未检测到名单</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let names = []; // 存储解析出来的名字
+    let timer = null;
+    const display = document.getElementById('display-name');
+    const btn = document.getElementById('btn');
+    const statusText = document.getElementById('status');
+
+    // 监听文件上传
+    document.getElementById('excel-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 获取第一个工作表
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // 将表格转换为 JSON
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            // 提取所有单元格里的名字（合并成一个扁平数组）
+            names = jsonData.flat().map(n => n?.toString().trim()).filter(n => n);
+            
+            if (names.length > 0) {
+                statusText.innerText = `✅ 已成功载入 ${names.length} 个名字`;
+                display.innerText = "准备就绪";
+            } else {
+                statusText.innerText = "❌ 未能在表格中找到名字";
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function toggle() {
+        if (names.length === 0) {
+            alert("请先上传 Excel 文件！");
+            return;
+        }
+
+        if (timer) {
+            // 停止
+            clearInterval(timer);
+            timer = null;
+            btn.innerText = '开始';
+            btn.style.backgroundColor = '#ff4757';
+            display.style.color = '#feca57'; // 中奖后的高亮色
+        } else {
+            // 开始
+            btn.innerText = '停止';
+            btn.style.backgroundColor = '#2ed573';
+            display.style.color = 'white';
+            
+            timer = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * names.length);
+                display.innerText = names[randomIndex];
+            }, 50);
+        }
+    }
+</script>
+
+</body>
+</html>
